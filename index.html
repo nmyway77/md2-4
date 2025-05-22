@@ -19,10 +19,25 @@
     }
     .hint { font-size: 1.2em; margin-bottom: 16px; color: #2c3e50; }
     .sortable { display: flex; flex-wrap: wrap; min-height: 50px; gap: 8px; background: #fff; padding: 12px; border-radius: 8px; box-shadow: 0 1px 4px #0001; margin-bottom: 20px;}
-    .word { background: #e0e7ef; border: none; border-radius: 8px; padding: 8px 16px; font-size: 1em; cursor: pointer; transition: background 0.2s; }
-    .word:hover { background: #b5cfff; }
+    /* 모든 단어버튼 기본스타일 */
+    .word { border: none; border-radius: 8px; padding: 8px 16px; font-size: 1em; cursor: pointer; transition: background 0.2s; }
+    /* 답란(위쪽)에 올라온 단어 버튼 - 연한 회색 */
+    #answer .word {
+      background: #e0e7ef;
+      color: #1e293b;
+      font-weight: bold;
+    }
+    /* 단어풀(아래쪽) 단어 버튼 - 더 진한 파란색 */
+    #pool .word {
+      background: #2563eb;
+      color: #fff;
+      font-weight: bold;
+    }
+    #pool .word:hover {
+      background: #1d4ed8;
+    }
     #controls { margin-top: 20px; }
-    button { padding: 8px 20px; font-size: 1em; border-radius: 8px; border: none; background: #3b82f6; color: #fff; cursor: pointer; }
+    button { padding: 8px 20px; font-size: 1em; border-radius: 8px; border: none; background: #3b82f6; color: #fff; cursor: pointer; margin-right: 8px; }
     button:active { background: #2563eb; }
     #result { margin-top: 20px; font-size: 1.1em; font-weight: bold; color: #d97706; }
     #navigation { margin-bottom: 20px; }
@@ -42,120 +57,115 @@
   <div id="answer" class="sortable"></div>
   <div id="pool" class="sortable"></div>
   <div id="controls">
+    <button onclick="undoLastWord()">되돌리기</button>
     <button onclick="resetSentence()">초기화</button>
     <button onclick="checkAnswer()">정답 확인</button>
   </div>
   <div id="result"></div>
   <script>
     // 문제 세트
- const problems = [
-  // 본문 1
-  {
-    kor: "고카트 경기 트랙에 신이 나서 응원하는 많은 사람들이 있다.",
-    eng: ["At", "the", "go-kart", "race", "track,", "there", "are", "many", "people", "who", "are", "cheering", "excitedly."],
-  },
-  {
-    kor: "시끄러운 엔진 소음을 내고 있는 카트들이 대기하고 있다.",
-    eng: ["The", "karts", "that", "are", "making", "loud", "engine", "noises", "are", "waiting."],
-  },
-  {
-    kor: "심판이 녹색 깃발을 흔들고, 경기가 시작된다!",
-    eng: ["An", "official", "waves", "a", "green", "flag", "and", "the", "race", "starts!"],
-  },
-  {
-    kor: "Max는 트랙에서 여섯 바퀴를 마치면서 가속 페달을 힘껏 발로 누른다.",
-    eng: ["Max", "pushes", "his", "foot", "down", "hard", "on", "the", "gas", "pedal", "as", "he", "completes", "his", "sixth", "lap", "on", "the", "track."],
-  },
-  {
-    kor: "직선 구간에서 Max는 경기의 선두인 Simon의 바로 옆까지 다가간다.",
-    eng: ["On", "the", "straightaway,", "Max", "pulls", "right", "beside", "the", "race's", "leader,", "Simon."],
-  },
-  {
-    kor: "작년에 Simon은 많은 경기에서 우승했지만, 경기에서 Max의 최고 성적은 5등으로 들어온 것이었다.",
-    eng: ["Last", "year,", "Simon", "won", "many", "races,", "but", "Max's", "best", "result", "in", "a", "race", "was", "coming", "in", "fifth", "place."],
-  },
-  {
-    kor: "이번에 그는 2등으로 경기를 마칠 기회가 있다.",
-    eng: ["This", "time,", "he", "has", "a", "chance", "to", "finish", "second."],
-  },
-  {
-    kor: "그러나 그는 오늘 2등으로 만족하지 않을 것이다.",
-    eng: ["But", "he", "isn't", "going", "to", "be", "satisfied", "with", "second", "place", "today."],
-  },
-  {
-    kor: "우승자는 세계적으로 유명한 경주 선수인 L. J. Richards를 만나게 된다!",
-    eng: ["The", "winner", "gets", "to", "meet", "the", "world", "famous", "racer", "L.", "J.", "Richards!"],
-  },
-  {
-    kor: "그는 그의 롤 모델을 만날 수 있는 기회를 놓치고 싶지 않다.",
-    eng: ["He", "doesn't", "want", "to", "miss", "the", "chance", "to", "meet", "his", "role", "model."],
-  },
-
-  // 본문 2
-  {
-    kor: "Max는 열 바퀴를 마치고 이제 다섯 바퀴가 더 남았다.",
-    eng: ["Max", "completes", "the", "tenth", "lap", "and", "now", "has", "five", "more", "laps", "to", "go."],
-  },
-  {
-    kor: "Max는 바로 닿을 듯한 거리 앞에 있는 Simon의 카트를 본다.",
-    eng: ["Max", "sees", "Simon's", "kart", "ahead,", "just", "out", "of", "Max's", "reach."],
-  },
-  {
-    kor: "Max의 카트는 Simon의 카트에 점점 더 가까이 다가간다.",
-    eng: ["Max's", "kart", "gets", "closer", "and", "closer", "to", "Simon's."],
-  },
-  {
-    kor: "그것은 Simon의 카트 뒷부분에 부딪칠락 말락 하다.",
-    eng: ["It", "almost", "hits", "the", "back", "end", "of", "Simon's", "kart."],
-  },
-  {
-    kor: "그들은 직선 구간으로 차를 몰고 들어가고, Max는 가속 페달을 더 세게 밟는다. '나는 따라잡을 수 있어.' Max가 말한다.",
-    eng: ["They", "drive", "into", "the", "straightaway", "and", "Max", "presses", "harder", "on", "the", "gas", "pedal.", "\"I", "can", "catch", "up,\"", "says", "Max."],
-  },
-  {
-    kor: "Max는 심판이 마지막 바퀴라는 것을 알려 주는 흰색 깃발을 흔드는 것을 본다. Max는 Simon의 바로 뒤에 있다.",
-    eng: ["Max", "sees", "the", "official", "waving", "a", "white", "flag", "which", "means", "the", "last", "lap.", "Max", "is", "right", "behind", "Simon."],
-  },
-  {
-    kor: "결승선이 점점 가까워지고, 관중들의 환호성은 점점 더 커진다.",
-    eng: ["The", "finish", "line", "is", "getting", "closer,", "and", "the", "cheering", "from", "the", "crowd", "is", "getting", "louder."],
-  },
-  {
-    kor: "'나는 할 수 있어!' Max는 큰소리로 외친다. 그는 그의 심장이 빠르게 뛰는 것을 느낄 수 있다.",
-    eng: ["\"I", "can", "do", "it!\"", "Max", "says", "loudly.", "He", "can", "feel", "his", "heart", "beating", "hard."],
-  },
-  {
-    kor: "카트들이 급히 달려 결승선을 지나간다. 누가 우승자일까?",
-    eng: ["The", "karts", "rush", "across", "the", "finish", "line.", "Who", "is", "the", "winner?"],
-  },
-
-  // 본문 3
-  {
-    kor: "Max가 자신이 2등으로 들어왔다는 것을 깨닫자 그의 눈은 눈물로 가득 찬다.",
-    eng: ["Max's", "eyes", "are", "filled", "with", "tears", "as", "he", "finds", "out", "that", "he", "came", "in", "second."],
-  },
-  {
-    kor: "\"울 필요 없단다, 얘야.\" 어떤 남자가 말한다. Max는 그의 눈을 믿을 수 없다.",
-    eng: ["\"No", "need", "for", "tears,", "kid,\"", "says", "a", "man's", "voice.", "Max", "can't", "believe", "his", "eyes."],
-  },
-  {
-    kor: "그 앞에 서 있는 남자는 L. J. Richards이다!",
-    eng: ["The", "man", "who", "is", "standing", "in", "front", "of", "him", "is", "L.", "J.", "Richards!"],
-  },
-  {
-    kor: "\"감사합니다만 저는 우승자가 아니에요.\" Max가 말한다.",
-    eng: ["\"Thank", "you,", "but", "I'm", "not", "the", "winner,\"", "says", "Max."],
-  },
-  {
-    kor: "\"정말 아슬아슬한 경기였어. 너는 비록 경기에서 우승하지 못했지만 최선을 다했잖니. 중요한 것은 바로 그거란다!\" L. J. Richards가 말한다.",
-    eng: ["\"It", "was", "a", "real", "close", "race.", "Even", "though", "you", "didn't", "win", "the", "race,", "you", "did", "your", "best.", "That's", "the", "thing", "that", "counts!\"", "says", "L.", "J.", "Richards."],
-  },
-  {
-    kor: "'내가 최선을 다했었나?' Max는 생각한다. 잠시 후에 그는 미소를 짓는다. \"네, 저는 최선을 다했다고 생각해요.\"",
-    eng: ["'Did", "I", "do", "my", "best?'", "thinks", "Max.", "After", "a", "moment,", "he", "smiles.", "\"Yeah,", "I", "guess", "I", "did.\""],
-  }
-];
-
+    const problems = [
+      {
+        kor: "고카트 경기 트랙에 신이 나서 응원하는 많은 사람들이 있다.",
+        eng: ["At", "the", "go-kart", "race", "track,", "there", "are", "many", "people", "who", "are", "cheering", "excitedly."],
+      },
+      {
+        kor: "시끄러운 엔진 소음을 내고 있는 카트들이 대기하고 있다.",
+        eng: ["The", "karts", "that", "are", "making", "loud", "engine", "noises", "are", "waiting."],
+      },
+      {
+        kor: "심판이 녹색 깃발을 흔들고, 경기가 시작된다!",
+        eng: ["An", "official", "waves", "a", "green", "flag", "and", "the", "race", "starts!"],
+      },
+      {
+        kor: "Max는 트랙에서 여섯 바퀴를 마치면서 가속 페달을 힘껏 발로 누른다.",
+        eng: ["Max", "pushes", "his", "foot", "down", "hard", "on", "the", "gas", "pedal", "as", "he", "completes", "his", "sixth", "lap", "on", "the", "track."],
+      },
+      {
+        kor: "직선 구간에서 Max는 경기의 선두인 Simon의 바로 옆까지 다가간다.",
+        eng: ["On", "the", "straightaway,", "Max", "pulls", "right", "beside", "the", "race's", "leader,", "Simon."],
+      },
+      {
+        kor: "작년에 Simon은 많은 경기에서 우승했지만, 경기에서 Max의 최고 성적은 5등으로 들어온 것이었다.",
+        eng: ["Last", "year,", "Simon", "won", "many", "races,", "but", "Max's", "best", "result", "in", "a", "race", "was", "coming", "in", "fifth", "place."],
+      },
+      {
+        kor: "이번에 그는 2등으로 경기를 마칠 기회가 있다.",
+        eng: ["This", "time,", "he", "has", "a", "chance", "to", "finish", "second."],
+      },
+      {
+        kor: "그러나 그는 오늘 2등으로 만족하지 않을 것이다.",
+        eng: ["But", "he", "isn't", "going", "to", "be", "satisfied", "with", "second", "place", "today."],
+      },
+      {
+        kor: "우승자는 세계적으로 유명한 경주 선수인 L. J. Richards를 만나게 된다!",
+        eng: ["The", "winner", "gets", "to", "meet", "the", "world", "famous", "racer", "L.", "J.", "Richards!"],
+      },
+      {
+        kor: "그는 그의 롤 모델을 만날 수 있는 기회를 놓치고 싶지 않다.",
+        eng: ["He", "doesn't", "want", "to", "miss", "the", "chance", "to", "meet", "his", "role", "model."],
+      },
+      {
+        kor: "Max는 열 바퀴를 마치고 이제 다섯 바퀴가 더 남았다.",
+        eng: ["Max", "completes", "the", "tenth", "lap", "and", "now", "has", "five", "more", "laps", "to", "go."],
+      },
+      {
+        kor: "Max는 바로 닿을 듯한 거리 앞에 있는 Simon의 카트를 본다.",
+        eng: ["Max", "sees", "Simon's", "kart", "ahead,", "just", "out", "of", "Max's", "reach."],
+      },
+      {
+        kor: "Max의 카트는 Simon의 카트에 점점 더 가까이 다가간다.",
+        eng: ["Max's", "kart", "gets", "closer", "and", "closer", "to", "Simon's."],
+      },
+      {
+        kor: "그것은 Simon의 카트 뒷부분에 부딪칠락 말락 하다.",
+        eng: ["It", "almost", "hits", "the", "back", "end", "of", "Simon's", "kart."],
+      },
+      {
+        kor: "그들은 직선 구간으로 차를 몰고 들어가고, Max는 가속 페달을 더 세게 밟는다. '나는 따라잡을 수 있어.' Max가 말한다.",
+        eng: ["They", "drive", "into", "the", "straightaway", "and", "Max", "presses", "harder", "on", "the", "gas", "pedal.", "\"I", "can", "catch", "up,\"", "says", "Max."],
+      },
+      {
+        kor: "Max는 심판이 마지막 바퀴라는 것을 알려 주는 흰색 깃발을 흔드는 것을 본다. Max는 Simon의 바로 뒤에 있다.",
+        eng: ["Max", "sees", "the", "official", "waving", "a", "white", "flag", "which", "means", "the", "last", "lap.", "Max", "is", "right", "behind", "Simon."],
+      },
+      {
+        kor: "결승선이 점점 가까워지고, 관중들의 환호성은 점점 더 커진다.",
+        eng: ["The", "finish", "line", "is", "getting", "closer,", "and", "the", "cheering", "from", "the", "crowd", "is", "getting", "louder."],
+      },
+      {
+        kor: "'나는 할 수 있어!' Max는 큰소리로 외친다. 그는 그의 심장이 빠르게 뛰는 것을 느낄 수 있다.",
+        eng: ["\"I", "can", "do", "it!\"", "Max", "says", "loudly.", "He", "can", "feel", "his", "heart", "beating", "hard."],
+      },
+      {
+        kor: "카트들이 급히 달려 결승선을 지나간다. 누가 우승자일까?",
+        eng: ["The", "karts", "rush", "across", "the", "finish", "line.", "Who", "is", "the", "winner?"],
+      },
+      {
+        kor: "Max가 자신이 2등으로 들어왔다는 것을 깨닫자 그의 눈은 눈물로 가득 찬다.",
+        eng: ["Max's", "eyes", "are", "filled", "with", "tears", "as", "he", "finds", "out", "that", "he", "came", "in", "second."],
+      },
+      {
+        kor: "\"울 필요 없단다, 얘야.\" 어떤 남자가 말한다. Max는 그의 눈을 믿을 수 없다.",
+        eng: ["\"No", "need", "for", "tears,", "kid,\"", "says", "a", "man's", "voice.", "Max", "can't", "believe", "his", "eyes."],
+      },
+      {
+        kor: "그 앞에 서 있는 남자는 L. J. Richards이다!",
+        eng: ["The", "man", "who", "is", "standing", "in", "front", "of", "him", "is", "L.", "J.", "Richards!"],
+      },
+      {
+        kor: "\"감사합니다만 저는 우승자가 아니에요.\" Max가 말한다.",
+        eng: ["\"Thank", "you,", "but", "I'm", "not", "the", "winner,\"", "says", "Max."],
+      },
+      {
+        kor: "\"정말 아슬아슬한 경기였어. 너는 비록 경기에서 우승하지 못했지만 최선을 다했잖니. 중요한 것은 바로 그거란다!\" L. J. Richards가 말한다.",
+        eng: ["\"It", "was", "a", "real", "close", "race.", "Even", "though", "you", "didn't", "win", "the", "race,", "you", "did", "your", "best.", "That's", "the", "thing", "that", "counts!\"", "says", "L.", "J.", "Richards."],
+      },
+      {
+        kor: "'내가 최선을 다했었나?' Max는 생각한다. 잠시 후에 그는 미소를 짓는다. \"네, 저는 최선을 다했다고 생각해요.\"",
+        eng: ["'Did", "I", "do", "my", "best?'", "thinks", "Max.", "After", "a", "moment,", "he", "smiles.", "\"Yeah,", "I", "guess", "I", "did.\""],
+      }
+    ];
 
     let currentIdx = 0;
     let poolWords = [];
@@ -188,6 +198,12 @@
       chosen.splice(i, 1);
       render();
     }
+    function undoLastWord() {
+      if (chosen.length > 0) {
+        poolWords.push(chosen.pop());
+        render();
+      }
+    }
     function resetSentence() {
       poolWords = shuffle(problems[currentIdx].eng);
       chosen = [];
@@ -213,8 +229,9 @@
       }
     }
 
-    // 시작
+    // 최초 렌더링
     resetSentence();
   </script>
 </body>
 </html>
+
