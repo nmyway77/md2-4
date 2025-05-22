@@ -1,0 +1,95 @@
+ <!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>수능완성 2000 – 단어 클릭 및 뜻 보기 예제</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 10px; }
+    #showWords {
+      padding: 10px 20px; font-size: 16px;
+      background-color: #4CAF50; color: white;
+      border: 2px solid #4CAF50; border-radius: 8px;
+      cursor: pointer; outline: none; margin-bottom: 10px;
+    }
+    #showWords:hover { background-color: white; color: #4CAF50; }
+    #meaningBox {
+      position: sticky; top: 0; background: #fff;
+      padding: 10px; font-size: 18px; color: #333;
+      border-bottom: 1px solid #ccc; z-index: 10;
+      margin-bottom: 10px;
+    }
+    #wordList { padding-bottom: 20px; }
+    .lessonHeading { margin-top: 20px; font-size: 20px; font-weight: bold; }
+    .wordItem { display: inline-block; font-size: 20px;
+      cursor: pointer; margin: 5px; padding: 5px 10px;
+      background: #f0f0f0; border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <button id="showWords">단어 목록 전체 보기</button>
+  <div id="meaningBox">단어를 클릭하면 뜻이 이곳에 표시됩니다.</div>
+  <div id="wordList"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const dictionary = [
+        { heading: '1과 단어' },
+        { word: 'apple',     meaning: '사과' },
+        { word: 'banana',    meaning: '바나나' },
+        { word: 'grape',     meaning: '포도' },
+        { heading: '2과 단어' },
+        { word: 'delicious', meaning: '맛있는' },
+        { word: 'fruit',     meaning: '과일' }
+      ];
+
+      const showBtn = document.getElementById('showWords');
+      const wordListDiv = document.getElementById('wordList');
+      const meaningBox = document.getElementById('meaningBox');
+
+      // TTS 발음 재생 (Web Speech API 우선, 실패 시 Google TTS)
+      function speak(word) {
+        if (window.speechSynthesis && 'SpeechSynthesisUtterance' in window) {
+          try {
+            const utter = new SpeechSynthesisUtterance(word);
+            utter.lang = 'en-US';
+            speechSynthesis.speak(utter);
+            return;
+          } catch (e) {
+            console.warn('Web Speech API 실패, Google TTS로 대체:', e);
+          }
+        }
+        // Google Translate TTS fallback
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(word)}`;
+        const audio = new Audio(url);
+        audio.play().catch(err => console.error('Audio 재생 실패:', err));
+      }
+
+      function renderWords() {
+        wordListDiv.innerHTML = '';
+        dictionary.forEach(entry => {
+          if (entry.heading) {
+            const h = document.createElement('div');
+            h.textContent = entry.heading;
+            h.className = 'lessonHeading';
+            wordListDiv.appendChild(h);
+          } else {
+            const span = document.createElement('span');
+            span.textContent = entry.word;
+            span.className = 'wordItem';
+            span.addEventListener('click', () => {
+              meaningBox.textContent = `${entry.word} → ${entry.meaning}`;
+              speak(entry.word);
+            });
+            wordListDiv.appendChild(span);
+          }
+        });
+      }
+
+      showBtn.addEventListener('click', renderWords);
+      renderWords();
+    });
+  </script>
+</body>
+</html>
