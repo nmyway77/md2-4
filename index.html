@@ -1,95 +1,220 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>수능완성 2000 – 단어 클릭 및 뜻 보기 예제</title>
+  <meta charset="UTF-8">
+  <title>문장 배열영작 연습</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 10px; }
-    #showWords {
-      padding: 10px 20px; font-size: 16px;
-      background-color: #4CAF50; color: white;
-      border: 2px solid #4CAF50; border-radius: 8px;
-      cursor: pointer; outline: none; margin-bottom: 10px;
+    body { font-family: Arial, sans-serif; padding: 24px; background: #f6f8fa; }
+    .header {
+      background: #3b82f6;
+      color: #fff;
+      padding: 28px 0 18px 0;
+      text-align: center;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 24px;
+      border-radius: 0 0 20px 20px;
     }
-    #showWords:hover { background-color: white; color: #4CAF50; }
-    #meaningBox {
-      position: sticky; top: 0; background: #fff;
-      padding: 10px; font-size: 18px; color: #333;
-      border-bottom: 1px solid #ccc; z-index: 10;
-      margin-bottom: 10px;
-    }
-    #wordList { padding-bottom: 20px; }
-    .lessonHeading { margin-top: 20px; font-size: 20px; font-weight: bold; }
-    .wordItem { display: inline-block; font-size: 20px;
-      cursor: pointer; margin: 5px; padding: 5px 10px;
-      background: #f0f0f0; border-radius: 4px;
-    }
+    .hint { font-size: 1.2em; margin-bottom: 16px; color: #2c3e50; }
+    .sortable { display: flex; flex-wrap: wrap; min-height: 50px; gap: 8px; background: #fff; padding: 12px; border-radius: 8px; box-shadow: 0 1px 4px #0001; margin-bottom: 20px;}
+    .word { background: #e0e7ef; border: none; border-radius: 8px; padding: 8px 16px; font-size: 1em; cursor: pointer; transition: background 0.2s; }
+    .word:hover { background: #b5cfff; }
+    #controls { margin-top: 20px; }
+    button { padding: 8px 20px; font-size: 1em; border-radius: 8px; border: none; background: #3b82f6; color: #fff; cursor: pointer; }
+    button:active { background: #2563eb; }
+    #result { margin-top: 20px; font-size: 1.1em; font-weight: bold; color: #d97706; }
+    #navigation { margin-bottom: 20px; }
   </style>
 </head>
 <body>
-  <button id="showWords">단어 목록 전체 보기</button>
-  <div id="meaningBox">단어를 클릭하면 뜻이 이곳에 표시됩니다.</div>
-  <div id="wordList"></div>
-
+  <div class="header">
+    영어 문장 배열 영작 연습<br>
+    <span style="font-size:1.1rem;font-weight:normal;letter-spacing:0;color:#dbeafe;">Word Order Sentence Builder</span>
+  </div>
+  <div id="navigation">
+    <button onclick="prevQuestion()">이전</button>
+    <span id="progress"></span>
+    <button onclick="nextQuestion()">다음</button>
+  </div>
+  <div class="hint">해석: <strong id="kor"></strong></div>
+  <div id="answer" class="sortable"></div>
+  <div id="pool" class="sortable"></div>
+  <div id="controls">
+    <button onclick="resetSentence()">초기화</button>
+    <button onclick="checkAnswer()">정답 확인</button>
+  </div>
+  <div id="result"></div>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const dictionary = [
-        { heading: '1과 단어' },
-        { word: 'apple',     meaning: '사과' },
-        { word: 'banana',    meaning: '바나나' },
-        { word: 'grape',     meaning: '포도' },
-        { heading: '2과 단어' },
-        { word: 'delicious', meaning: '맛있는' },
-        { word: 'fruit',     meaning: '과일' }
-      ];
+    // 문제 세트
+ const problems = [
+  // 본문 1
+  {
+    kor: "고카트 경기 트랙에 신이 나서 응원하는 많은 사람들이 있다.",
+    eng: ["At", "the", "go-kart", "race", "track,", "there", "are", "many", "people", "who", "are", "cheering", "excitedly."],
+  },
+  {
+    kor: "시끄러운 엔진 소음을 내고 있는 카트들이 대기하고 있다.",
+    eng: ["The", "karts", "that", "are", "making", "loud", "engine", "noises", "are", "waiting."],
+  },
+  {
+    kor: "심판이 녹색 깃발을 흔들고, 경기가 시작된다!",
+    eng: ["An", "official", "waves", "a", "green", "flag", "and", "the", "race", "starts!"],
+  },
+  {
+    kor: "Max는 트랙에서 여섯 바퀴를 마치면서 가속 페달을 힘껏 발로 누른다.",
+    eng: ["Max", "pushes", "his", "foot", "down", "hard", "on", "the", "gas", "pedal", "as", "he", "completes", "his", "sixth", "lap", "on", "the", "track."],
+  },
+  {
+    kor: "직선 구간에서 Max는 경기의 선두인 Simon의 바로 옆까지 다가간다.",
+    eng: ["On", "the", "straightaway,", "Max", "pulls", "right", "beside", "the", "race's", "leader,", "Simon."],
+  },
+  {
+    kor: "작년에 Simon은 많은 경기에서 우승했지만, 경기에서 Max의 최고 성적은 5등으로 들어온 것이었다.",
+    eng: ["Last", "year,", "Simon", "won", "many", "races,", "but", "Max's", "best", "result", "in", "a", "race", "was", "coming", "in", "fifth", "place."],
+  },
+  {
+    kor: "이번에 그는 2등으로 경기를 마칠 기회가 있다.",
+    eng: ["This", "time,", "he", "has", "a", "chance", "to", "finish", "second."],
+  },
+  {
+    kor: "그러나 그는 오늘 2등으로 만족하지 않을 것이다.",
+    eng: ["But", "he", "isn't", "going", "to", "be", "satisfied", "with", "second", "place", "today."],
+  },
+  {
+    kor: "우승자는 세계적으로 유명한 경주 선수인 L. J. Richards를 만나게 된다!",
+    eng: ["The", "winner", "gets", "to", "meet", "the", "world", "famous", "racer", "L.", "J.", "Richards!"],
+  },
+  {
+    kor: "그는 그의 롤 모델을 만날 수 있는 기회를 놓치고 싶지 않다.",
+    eng: ["He", "doesn't", "want", "to", "miss", "the", "chance", "to", "meet", "his", "role", "model."],
+  },
 
-      const showBtn = document.getElementById('showWords');
-      const wordListDiv = document.getElementById('wordList');
-      const meaningBox = document.getElementById('meaningBox');
+  // 본문 2
+  {
+    kor: "Max는 열 바퀴를 마치고 이제 다섯 바퀴가 더 남았다.",
+    eng: ["Max", "completes", "the", "tenth", "lap", "and", "now", "has", "five", "more", "laps", "to", "go."],
+  },
+  {
+    kor: "Max는 바로 닿을 듯한 거리 앞에 있는 Simon의 카트를 본다.",
+    eng: ["Max", "sees", "Simon's", "kart", "ahead,", "just", "out", "of", "Max's", "reach."],
+  },
+  {
+    kor: "Max의 카트는 Simon의 카트에 점점 더 가까이 다가간다.",
+    eng: ["Max's", "kart", "gets", "closer", "and", "closer", "to", "Simon's."],
+  },
+  {
+    kor: "그것은 Simon의 카트 뒷부분에 부딪칠락 말락 하다.",
+    eng: ["It", "almost", "hits", "the", "back", "end", "of", "Simon's", "kart."],
+  },
+  {
+    kor: "그들은 직선 구간으로 차를 몰고 들어가고, Max는 가속 페달을 더 세게 밟는다. '나는 따라잡을 수 있어.' Max가 말한다.",
+    eng: ["They", "drive", "into", "the", "straightaway", "and", "Max", "presses", "harder", "on", "the", "gas", "pedal.", "\"I", "can", "catch", "up,\"", "says", "Max."],
+  },
+  {
+    kor: "Max는 심판이 마지막 바퀴라는 것을 알려 주는 흰색 깃발을 흔드는 것을 본다. Max는 Simon의 바로 뒤에 있다.",
+    eng: ["Max", "sees", "the", "official", "waving", "a", "white", "flag", "which", "means", "the", "last", "lap.", "Max", "is", "right", "behind", "Simon."],
+  },
+  {
+    kor: "결승선이 점점 가까워지고, 관중들의 환호성은 점점 더 커진다.",
+    eng: ["The", "finish", "line", "is", "getting", "closer,", "and", "the", "cheering", "from", "the", "crowd", "is", "getting", "louder."],
+  },
+  {
+    kor: "'나는 할 수 있어!' Max는 큰소리로 외친다. 그는 그의 심장이 빠르게 뛰는 것을 느낄 수 있다.",
+    eng: ["\"I", "can", "do", "it!\"", "Max", "says", "loudly.", "He", "can", "feel", "his", "heart", "beating", "hard."],
+  },
+  {
+    kor: "카트들이 급히 달려 결승선을 지나간다. 누가 우승자일까?",
+    eng: ["The", "karts", "rush", "across", "the", "finish", "line.", "Who", "is", "the", "winner?"],
+  },
 
-      // TTS 발음 재생 (Web Speech API 우선, 실패 시 Google TTS)
-      function speak(word) {
-        if (window.speechSynthesis && 'SpeechSynthesisUtterance' in window) {
-          try {
-            const utter = new SpeechSynthesisUtterance(word);
-            utter.lang = 'en-US';
-            speechSynthesis.speak(utter);
-            return;
-          } catch (e) {
-            console.warn('Web Speech API 실패, Google TTS로 대체:', e);
-          }
-        }
-        // Google Translate TTS fallback
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(word)}`;
-        const audio = new Audio(url);
-        audio.play().catch(err => console.error('Audio 재생 실패:', err));
+  // 본문 3
+  {
+    kor: "Max가 자신이 2등으로 들어왔다는 것을 깨닫자 그의 눈은 눈물로 가득 찬다.",
+    eng: ["Max's", "eyes", "are", "filled", "with", "tears", "as", "he", "finds", "out", "that", "he", "came", "in", "second."],
+  },
+  {
+    kor: "\"울 필요 없단다, 얘야.\" 어떤 남자가 말한다. Max는 그의 눈을 믿을 수 없다.",
+    eng: ["\"No", "need", "for", "tears,", "kid,\"", "says", "a", "man's", "voice.", "Max", "can't", "believe", "his", "eyes."],
+  },
+  {
+    kor: "그 앞에 서 있는 남자는 L. J. Richards이다!",
+    eng: ["The", "man", "who", "is", "standing", "in", "front", "of", "him", "is", "L.", "J.", "Richards!"],
+  },
+  {
+    kor: "\"감사합니다만 저는 우승자가 아니에요.\" Max가 말한다.",
+    eng: ["\"Thank", "you,", "but", "I'm", "not", "the", "winner,\"", "says", "Max."],
+  },
+  {
+    kor: "\"정말 아슬아슬한 경기였어. 너는 비록 경기에서 우승하지 못했지만 최선을 다했잖니. 중요한 것은 바로 그거란다!\" L. J. Richards가 말한다.",
+    eng: ["\"It", "was", "a", "real", "close", "race.", "Even", "though", "you", "didn't", "win", "the", "race,", "you", "did", "your", "best.", "That's", "the", "thing", "that", "counts!\"", "says", "L.", "J.", "Richards."],
+  },
+  {
+    kor: "'내가 최선을 다했었나?' Max는 생각한다. 잠시 후에 그는 미소를 짓는다. \"네, 저는 최선을 다했다고 생각해요.\"",
+    eng: ["'Did", "I", "do", "my", "best?'", "thinks", "Max.", "After", "a", "moment,", "he", "smiles.", "\"Yeah,", "I", "guess", "I", "did.\""],
+  }
+];
+
+
+    let currentIdx = 0;
+    let poolWords = [];
+    let chosen = [];
+
+    function shuffle(arr) {
+      return arr.slice().sort(() => Math.random() - 0.5);
+    }
+
+    function render() {
+      document.getElementById("kor").textContent = problems[currentIdx].kor;
+      document.getElementById("progress").textContent =
+        (currentIdx + 1) + " / " + problems.length;
+      answer.innerHTML = chosen.map((w, i) =>
+        `<button class="word" onclick="removeWord(${i})">${w}</button>`
+      ).join('');
+      pool.innerHTML = poolWords.map((w, i) =>
+        `<button class="word" onclick="chooseWord(${i})">${w}</button>`
+      ).join('');
+      result.innerHTML = '';
+    }
+
+    function chooseWord(i) {
+      chosen.push(poolWords[i]);
+      poolWords.splice(i, 1);
+      render();
+    }
+    function removeWord(i) {
+      poolWords.push(chosen[i]);
+      chosen.splice(i, 1);
+      render();
+    }
+    function resetSentence() {
+      poolWords = shuffle(problems[currentIdx].eng);
+      chosen = [];
+      render();
+    }
+    function checkAnswer() {
+      if (chosen.join(' ') === problems[currentIdx].eng.join(' ')) {
+        result.innerHTML = "정답입니다! 🎉";
+      } else {
+        result.innerHTML = "아쉽지만 정답이 아닙니다. 다시 시도해보세요.";
       }
-
-      function renderWords() {
-        wordListDiv.innerHTML = '';
-        dictionary.forEach(entry => {
-          if (entry.heading) {
-            const h = document.createElement('div');
-            h.textContent = entry.heading;
-            h.className = 'lessonHeading';
-            wordListDiv.appendChild(h);
-          } else {
-            const span = document.createElement('span');
-            span.textContent = entry.word;
-            span.className = 'wordItem';
-            span.addEventListener('click', () => {
-              meaningBox.textContent = `${entry.word} → ${entry.meaning}`;
-              speak(entry.word);
-            });
-            wordListDiv.appendChild(span);
-          }
-        });
+    }
+    function nextQuestion() {
+      if (currentIdx < problems.length - 1) {
+        currentIdx++;
+        resetSentence();
       }
+    }
+    function prevQuestion() {
+      if (currentIdx > 0) {
+        currentIdx--;
+        resetSentence();
+      }
+    }
 
-      showBtn.addEventListener('click', renderWords);
-      renderWords();
-    });
+    // 시작
+    resetSentence();
   </script>
 </body>
 </html>
